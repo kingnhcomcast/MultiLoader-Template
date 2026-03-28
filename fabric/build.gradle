@@ -1,18 +1,54 @@
 plugins {
     id 'multiloader-loader'
-    id 'fabric-loom'
+    id 'net.fabricmc.fabric-loom'
+    id 'maven-publish'
 }
-dependencies {
-    minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings loom.layered {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${parchment_minecraft}:${parchment_version}@zip")
+configurations {
+    commonClientJava {
+        canBeResolved = true
     }
-    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+    commonClientResources {
+        canBeResolved = true
+    }
 }
 
+configurations.configureEach { cfg ->
+    if (cfg.name == 'clientImplementation') {
+        cfg.extendsFrom(configurations.implementation)
+    }
+    if (cfg.name == 'clientRuntimeOnly') {
+        cfg.extendsFrom(configurations.runtimeOnly)
+    }
+}
+
+repositories {
+    maven { url "https://maven.shedaniel.me/" }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+    implementation project(":common")
+
+    //runtimeOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+
+    commonClientJava project(path: ':common', configuration: 'commonClientJava')
+    commonClientResources project(path: ':common', configuration: 'commonClientResources')
+}
+
+
 loom {
+    splitEnvironmentSourceSets()
+
+    mods {
+        "examplemod" { // Your mod ID
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+
     def aw = project(':common').file("src/main/resources/${mod_id}.accesswidener")
     if (aw.exists()) {
         accessWidenerPath.set(aw)
@@ -26,14 +62,27 @@ loom {
             setConfigName('Fabric Client')
             ideConfigGenerated(true)
             runDir('runs/client')
+            property "log4j.configurationFile", "classpath:log4j2.xml"
+            property "fabric.development", "true"
         }
         server {
             server()
             setConfigName('Fabric Server')
             ideConfigGenerated(true)
             runDir('runs/server')
+            property "log4j.configurationFile", "classpath:log4j2.xml"
         }
     }
+}
+
+tasks.named('compileClientJava', JavaCompile) {
+    dependsOn(configurations.commonClientJava)
+    source(configurations.commonClientJava)
+}
+
+tasks.named('processClientResources') {
+    dependsOn(configurations.commonClientResources)
+    from(configurations.commonClientResources)
 }
 
 // Implement mcgradleconventions loader attribute
@@ -45,19 +94,13 @@ def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', Strin
         }
     }
 }
+
 sourceSets.configureEach {
     [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant->
         configurations.named("$variant") {
             attributes {
                 attribute(loaderAttribute, 'fabric')
             }
-        }
-    }
-}
-loom.remapConfigurations.configureEach {
-    configurations.named(it.name) {
-        attributes {
-            attribute(loaderAttribute, 'fabric')
         }
     }
 }

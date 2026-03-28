@@ -8,15 +8,18 @@
         "${mod_author}"
     ],
     "contact": {
-        "homepage": "https://fabricmc.net/",
-        "sources": "https://github.com/FabricMC/fabric-example-mod"
+        "homepage": "https://github.com/kingnhcomcast/examplemod",
+        "sources": "https://github.com/kingnhcomcast/examplemod"
     },
     "license": "${license}",
-    "icon": "${mod_id}.png",
+    "icon": "assets/examplemod/icon.png",
     "environment": "*",
     "entrypoints": {
         "main": [
-            "com.example.examplemod.ExampleMod"
+            "io.drahlek.examplemod.ExampleMod"
+        ],
+        "client": [
+            "io.drahlek.examplemod.ExamplemodClient"
         ]
     },
     "mixins": [
