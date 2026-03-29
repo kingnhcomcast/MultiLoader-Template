@@ -1,106 +1,99 @@
 plugins {
-    id 'multiloader-loader'
-    id 'net.fabricmc.fabric-loom'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
 }
-configurations {
-    commonClientJava {
-        canBeResolved = true
-    }
-    commonClientResources {
-        canBeResolved = true
-    }
-}
 
-configurations.configureEach { cfg ->
-    if (cfg.name == 'clientImplementation') {
-        cfg.extendsFrom(configurations.implementation)
-    }
-    if (cfg.name == 'clientRuntimeOnly') {
-        cfg.extendsFrom(configurations.runtimeOnly)
-    }
+version = project.version
+group = project.group
+
+base {
+    archivesName = project.mod_id
 }
 
 repositories {
-    maven { url "https://maven.shedaniel.me/" }
+    // Add repositories to retrieve artifacts from in here.
+    // You should only use this when depending on other mods because
+    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
+    // for more information about repositories.
 }
-
-dependencies {
-    minecraft "com.mojang:minecraft:${minecraft_version}"
-
-    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-    implementation project(":common")
-
-    //runtimeOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-
-    commonClientJava project(path: ':common', configuration: 'commonClientJava')
-    commonClientResources project(path: ':common', configuration: 'commonClientResources')
-}
-
 
 loom {
     splitEnvironmentSourceSets()
 
     mods {
-        "examplemod" { // Your mod ID
+        "modid" {
             sourceSet sourceSets.main
             sourceSet sourceSets.client
         }
     }
 
-    def aw = project(':common').file("src/main/resources/${mod_id}.accesswidener")
-    if (aw.exists()) {
-        accessWidenerPath.set(aw)
-    }
-    mixin {
-        defaultRefmapName.set("${mod_id}.refmap.json")
-    }
-    runs {
-        client {
-            client()
-            setConfigName('Fabric Client')
-            ideConfigGenerated(true)
-            runDir('runs/client')
-            property "log4j.configurationFile", "classpath:log4j2.xml"
-            property "fabric.development", "true"
-        }
-        server {
-            server()
-            setConfigName('Fabric Server')
-            ideConfigGenerated(true)
-            runDir('runs/server')
-            property "log4j.configurationFile", "classpath:log4j2.xml"
-        }
-    }
 }
 
-tasks.named('compileClientJava', JavaCompile) {
-    dependsOn(configurations.commonClientJava)
-    source(configurations.commonClientJava)
+dependencies {
+    // To change the versions see the gradle.properties file
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+
+    implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+
+    // Fabric API. This is technically optional, but you probably want it anyway.
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
 }
 
-tasks.named('processClientResources') {
-    dependsOn(configurations.commonClientResources)
-    from(configurations.commonClientResources)
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
 }
 
-// Implement mcgradleconventions loader attribute
-def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
-['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements', 'includeInternal', 'modCompileClasspath'].each { variant ->
-    configurations.named("$variant") {
-        attributes {
-            attribute(loaderAttribute, 'fabric')
-        }
+java {
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
+    withSourcesJar()
+
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+    inputs.property "archivesName", mod_id
+
+    from("LICENSE") {
+        rename { "${it}_${inputs.properties.archivesName}"}
     }
 }
 
-sourceSets.configureEach {
-    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant->
-        configurations.named("$variant") {
-            attributes {
-                attribute(loaderAttribute, 'fabric')
-            }
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand(
+                version: project.version,
+                mod_id: project.findProperty("mod_id") ?: "defaultmodid",
+                mod_name: project.findProperty("mod_name") ?: "Default Mod Name",
+                description: project.findProperty("description") ?: "",
+                mod_author: project.findProperty("mod_author") ?: "",
+                license: project.findProperty("license") ?: "MIT",
+                fabric_loader_version: project.findProperty("fabric_loader_version") ?: "0.18.0",
+                minecraft_version: project.findProperty("minecraft_version") ?: "1.20.1",
+                java_version: project.findProperty("java_version") ?: "17"
+        )
+    }
+}
+// configure the maven publication
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = mod_id
+            from components.java
         }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+        // Notice: This block does NOT have the same function as the block in the top level.
+        // The repositories here will be used for publishing your artifact, not for
+        // retrieving dependencies.
     }
 }
