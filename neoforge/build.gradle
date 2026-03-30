@@ -118,5 +118,6 @@ tasks.named('compileClientJava', JavaCompile) {
 tasks.named('processClientResources') {
     dependsOn(configurations.commonClientResources)
     from(configurations.commonClientResources)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 

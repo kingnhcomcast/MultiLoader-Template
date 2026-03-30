@@ -5,6 +5,5 @@ import net.fabricmc.api.ClientModInitializer;
 public class ExamplemodClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        Constants.LOG.info("ExampleModClient init {}", Constants.MOD_NAME);
-    }
+        Constants.LOG.info("{} Client Initialize", Constants.MOD_NAME);    }
 }

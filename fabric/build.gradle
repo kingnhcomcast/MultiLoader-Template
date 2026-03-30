@@ -1,21 +1,11 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
-    id 'maven-publish'
+    id 'multiloader-loader'
+    id 'net.fabricmc.fabric-loom'
 }
-
-version = project.version
-group = project.group
-
-base {
-    archivesName = project.mod_id
-}
-
-repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
 }
 
 loom {
@@ -28,21 +18,24 @@ loom {
         }
     }
 
-}
-
-dependencies {
-    // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-
-    implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
-
-    // Fabric API. This is technically optional, but you probably want it anyway.
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-}
-
-tasks.withType(JavaCompile).configureEach {
-    it.options.release = 25
+    def aw = project(':common').file("src/main/resources/${mod_id}.accesswidener")
+    if (aw.exists()) {
+        accessWidenerPath.set(aw)
+    }
+    runs {
+        client {
+            client()
+            setConfigName('Fabric Client')
+            ideConfigGenerated(true)
+            runDir('runs/client')
+        }
+        server {
+            server()
+            setConfigName('Fabric Server')
+            ideConfigGenerated(true)
+            runDir('runs/server')
+        }
+    }
 }
 
 java {
@@ -54,46 +47,32 @@ java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
 }
-
-jar {
-    inputs.property "archivesName", mod_id
-
-    from("LICENSE") {
-        rename { "${it}_${inputs.properties.archivesName}"}
-    }
-}
-
-processResources {
-    inputs.property "version", project.version
-
-    filesMatching("fabric.mod.json") {
-        expand(
-                version: project.version,
-                mod_id: project.findProperty("mod_id") ?: "defaultmodid",
-                mod_name: project.findProperty("mod_name") ?: "Default Mod Name",
-                description: project.findProperty("description") ?: "",
-                mod_author: project.findProperty("mod_author") ?: "",
-                license: project.findProperty("license") ?: "MIT",
-                fabric_loader_version: project.findProperty("fabric_loader_version") ?: "0.18.0",
-                minecraft_version: project.findProperty("minecraft_version") ?: "1.20.1",
-                java_version: project.findProperty("java_version") ?: "17"
-        )
-    }
-}
-// configure the maven publication
-publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            artifactId = mod_id
-            from components.java
+// Implement mcgradleconventions loader attribute
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements', 'includeInternal', 'modCompileClasspath'].each { variant ->
+    configurations.named("$variant") {
+        attributes {
+            attribute(loaderAttribute, 'fabric')
         }
     }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
+}
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant->
+        configurations.named("$variant") {
+            attributes {
+                attribute(loaderAttribute, 'fabric')
+            }
+        }
     }
 }
+
+tasks.register("copyExtraJars", Copy) {
+    from("${projectDir}/extraJars")
+    include("*.jar")
+    into(project.file("runs/server/mods"))
+}
+
+tasks.named('runServer') {
+    dependsOn 'copyExtraJars'
+}
+

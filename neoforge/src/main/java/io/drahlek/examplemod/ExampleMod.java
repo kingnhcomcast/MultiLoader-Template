@@ -8,14 +8,9 @@ import net.neoforged.fml.common.Mod;
 public class ExampleMod {
 
     public ExampleMod(IEventBus eventBus) {
+        // Perform logic in that should be executed on both sides
 
-        // This method is invoked by the NeoForge mod loader when it is ready
-        // to load your mod. You can access NeoForge and Common code in this
-        // project.
-
-        // Use NeoForge to bootstrap the Common mod.
-        Constants.LOG.info("{} main init", Constants.MOD_NAME);
+        Constants.LOG.info("{} Main Initialize", Constants.MOD_NAME);
         CommonClass.init();
-
     }
 }

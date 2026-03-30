@@ -102,3 +102,7 @@ artifacts {
     commonClientJava sourceSets.client.java.sourceDirectories.singleFile
     commonClientResources sourceSets.client.resources.sourceDirectories.singleFile
 }
+
+tasks.named('processClientResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
