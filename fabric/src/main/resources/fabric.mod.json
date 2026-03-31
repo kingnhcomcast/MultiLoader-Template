@@ -8,20 +8,35 @@
         "${mod_author}"
     ],
     "contact": {
-        "homepage": "https://fabricmc.net/",
-        "sources": "https://github.com/FabricMC/fabric-example-mod"
+        "homepage": "https://github.com/kingnhcomcast/examplemod",
+        "sources": "https://github.com/kingnhcomcast/examplemod"
     },
     "license": "${license}",
-    "icon": "${mod_id}.png",
+    "icon": "assets/examplemod/icon.png",
     "environment": "*",
     "entrypoints": {
         "main": [
-            "com.example.examplemod.ExampleMod"
+            "io.drahlek.examplemod.ExampleMod"
+        ],
+        "client": [
+            "io.drahlek.examplemod.ExamplemodClient"
         ]
     },
     "mixins": [
-        "${mod_id}.mixins.json",
-        "${mod_id}.fabric.mixins.json"
+        {
+            "config": "examplemod.common.client.mixins.json",
+            "environment": "client"
+        },
+        {
+            "config": "examplemod.fabric.client.mixins.json",
+            "environment": "client"
+        },
+        {
+            "config": "examplemod.fabric.mixins.json"
+        },
+        {
+            "config": "examplemod.common.main.mixins.json"
+        }
     ],
     "depends": {
         "fabricloader": ">=${fabric_loader_version}",
