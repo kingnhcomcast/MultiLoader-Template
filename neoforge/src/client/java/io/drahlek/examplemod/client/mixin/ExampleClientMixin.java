@@ -1,4 +1,4 @@
-package io.drahlek.examplemod.mixin;
+package io.drahlek.examplemod.client.mixin;
 
 import io.drahlek.examplemod.Constants;
 import net.minecraft.client.Minecraft;
@@ -8,10 +8,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Minecraft.class)
-public class MixinMinecraft {
-    
-    @Inject(at = @At("TAIL"), method = "<init>")
-    private void init(CallbackInfo info) {
-        Constants.LOG.info("Mixin Common Client");
+public class ExampleClientMixin {
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void onInit(CallbackInfo ci) {
+        Constants.LOG.info("Mixin NeoForge client");
     }
 }
+

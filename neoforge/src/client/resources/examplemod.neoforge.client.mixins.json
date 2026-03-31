@@ -1,14 +1,13 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "io.drahlek.examplemod.mixin",
-  "refmap": "${mod_id}.refmap.json",
+  "package": "io.drahlek.examplemod.client.mixin",
   "compatibilityLevel": "JAVA_25",
-  "mixins": [
-    "ExampleMixin"
+  "client": [
+    "ExampleClientMixin"
   ],
+  "server": [],
   "injectors": {
     "defaultRequire": 1
   }
 }
-  
