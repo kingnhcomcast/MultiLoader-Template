@@ -25,22 +25,29 @@ configurations.named('runtimeOnly') {
 }
 
 afterEvaluate {
-    // Fabric Loader needs explicit mod candidate paths for included-build mods in dev runs.
-    def developmentModPaths = configurations.developmentFabricMods.files
-        .findAll { it.exists() }
-        .collect { it.absolutePath }
-        .join(File.pathSeparator)
-    def clientDevelopmentModPaths = [
-        developmentModPaths,
-        tasks.named('jar').get().archiveFile.get().asFile.absolutePath
-    ].findAll { !it.isBlank() }.join(File.pathSeparator)
+    def resolveDevelopmentModPaths = {
+        // Fabric Loader needs explicit mod candidate paths for included-build mods in dev runs.
+        configurations.developmentFabricMods.files
+            .findAll { it.exists() }
+            .collect { it.absolutePath }
+            .join(File.pathSeparator)
+    }
 
     tasks.named('runClient') {
         dependsOn(tasks.named('jar'))
-        systemProperty('fabric.addMods', clientDevelopmentModPaths)
+        doFirst {
+            def developmentModPaths = resolveDevelopmentModPaths()
+            def clientDevelopmentModPaths = [
+                developmentModPaths,
+                tasks.named('jar').get().archiveFile.get().asFile.absolutePath
+            ].findAll { !it.isBlank() }.join(File.pathSeparator)
+            systemProperty('fabric.addMods', clientDevelopmentModPaths)
+        }
     }
 
     tasks.named('runServer') {
-        systemProperty('fabric.addMods', developmentModPaths)
+        doFirst {
+            systemProperty('fabric.addMods', resolveDevelopmentModPaths())
+        }
     }
 }
