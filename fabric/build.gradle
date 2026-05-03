@@ -1,7 +1,7 @@
 plugins {
     id 'multiloader-loader'
     id 'multiloader-fabric-composite'
-    id 'net.fabricmc.fabric-loom'
+    id 'fabric-loom'
 }
 
 configurations {
