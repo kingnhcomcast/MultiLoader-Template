@@ -3,6 +3,8 @@ plugins {
     id 'net.neoforged.moddev'
 }
 
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+
 sourceSets {
     client {
         java.srcDir 'src/client/java'
@@ -74,12 +76,18 @@ dependencies {
     commonClientJava project(path: ':common', configuration: 'commonClientJava')
     commonClientResources project(path: ':common', configuration: 'commonClientResources')
 
-    implementation project(':common')
+    implementation "io.drahlek:neoforge:${dirigo_min_version}"
+    implementation("io.drahlek:common:${dirigo_min_version}") {
+        attributes {
+            attribute(loaderAttribute, 'common')
+        }
+    }
+    compileOnly "org.projectlombok:lombok:1.18.44"
+    annotationProcessor "org.projectlombok:lombok:1.18.44"
 }
 
 
 // Implement mcgradleconventions loader attribute
-def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
 ['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
     configurations.named("$variant") {
         attributes {
